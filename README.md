@@ -14,17 +14,20 @@
 ## 安装
 
 ```bash
-go get github.com/yourusername/cert-sign
+go get github.com/marsquick/cert-sign
 ```
 
 ## 使用方法
 
 ### 1. 生成密钥对
 
-使用 OpenSSL 生成 ECDSA 密钥对：
+使用 OpenSSL 生成 ECDSA 密钥对（推荐方式）：
 
 ```bash
-# 生成私钥
+# 方法1：使用 genpkey 命令（推荐）
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out private.key
+
+# 方法2：使用 ecparam 命令
 openssl ecparam -name prime256v1 -genkey -noout -out private.key
 
 # 生成公钥
@@ -33,6 +36,8 @@ openssl ec -in private.key -pubout -out public.pem
 # 生成自签名证书（可选）
 openssl req -new -x509 -key private.key -out cert.pem -days 365 -subj "/CN=Test"
 ```
+
+注意：请确保使用 `-noout` 参数生成私钥，以避免生成 EC PARAMETERS 格式的文件。
 
 ### 2. 签名
 
@@ -140,4 +145,18 @@ BenchmarkVerifyFile-12    17811    69281 ns/op
 
 ## 许可证
 
-MIT License 
+Apache License 2.0
+
+Copyright 2024 MarsQuick
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. 
