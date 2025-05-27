@@ -34,14 +34,32 @@ func NewSignerFromPEMFile(privateKeyPath string) (*Signer, error) {
 		return nil, errors.New("无法解码PEM格式")
 	}
 
-	// 解析私钥
-	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
+	var ecdsaPriv *ecdsa.PrivateKey
+
+	switch block.Type {
+	case "EC PRIVATE KEY":
+		// 直接解析EC私钥
+		ecdsaPriv, err = x509.ParseECPrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+	case "PRIVATE KEY":
+		// 解析PKCS#8格式的私钥
+		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		ecdsaPriv, ok = key.(*ecdsa.PrivateKey)
+		if !ok {
+			return nil, errors.New("私钥不是ECDSA类型")
+		}
+	default:
+		return nil, errors.New("不支持的PEM类型: " + block.Type)
 	}
 
 	return &Signer{
-		privateKey: privateKey,
+		privateKey: ecdsaPriv,
 	}, nil
 }
 
