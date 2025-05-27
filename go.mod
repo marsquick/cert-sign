@@ -1,4 +1,4 @@
-module cert-sign
+module github.com/marsquick/cert-sign
 
 go 1.21
 
