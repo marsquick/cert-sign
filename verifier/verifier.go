@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"io"
-	"math/big"
 	"os"
 	"strings"
 	"sync"
@@ -77,20 +76,11 @@ func (v *Verifier) VerifyString(data, signature string) error {
 		return err
 	}
 
-	// 检查签名长度
-	if len(sigBytes) != 64 { // ECDSA P-256 签名为64字节
-		return errors.New("无效的签名长度")
-	}
-
-	// 分离r和s
-	r := new(big.Int).SetBytes(sigBytes[:32])
-	s := new(big.Int).SetBytes(sigBytes[32:])
-
 	// 计算数据的SHA256哈希
 	hash := sha256.Sum256([]byte(data))
 
-	// 验证签名
-	if !ecdsa.Verify(v.publicKey, hash[:], r, s) {
+	// 使用ASN.1格式验证签名
+	if !ecdsa.VerifyASN1(v.publicKey, hash[:], sigBytes) {
 		return errors.New("签名验证失败")
 	}
 
@@ -112,15 +102,6 @@ func (v *Verifier) VerifyFile(filePath, signature string) error {
 		return err
 	}
 
-	// 检查签名长度
-	if len(sigBytes) != 64 { // ECDSA P-256 签名为64字节
-		return errors.New("无效的签名长度")
-	}
-
-	// 分离r和s
-	r := new(big.Int).SetBytes(sigBytes[:32])
-	s := new(big.Int).SetBytes(sigBytes[32:])
-
 	// 打开文件
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -134,8 +115,8 @@ func (v *Verifier) VerifyFile(filePath, signature string) error {
 		return err
 	}
 
-	// 验证签名
-	if !ecdsa.Verify(v.publicKey, hash.Sum(nil), r, s) {
+	// 使用ASN.1格式验证签名
+	if !ecdsa.VerifyASN1(v.publicKey, hash.Sum(nil), sigBytes) {
 		return errors.New("签名验证失败")
 	}
 

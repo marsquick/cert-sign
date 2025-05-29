@@ -68,14 +68,11 @@ func (s *Signer) SignString(data string) (string, error) {
 	// 计算数据的SHA256哈希
 	hash := sha256.Sum256([]byte(data))
 
-	// 使用ECDSA进行签名
-	r, s_, err := ecdsa.Sign(rand.Reader, s.privateKey, hash[:])
+	// 使用ECDSA进行签名，直接使用ASN.1格式
+	signature, err := ecdsa.SignASN1(rand.Reader, s.privateKey, hash[:])
 	if err != nil {
 		return "", err
 	}
-
-	// 将r和s组合成签名
-	signature := append(r.Bytes(), s_.Bytes()...)
 
 	// 使用URL安全的Base64编码
 	encoded := base64.URLEncoding.EncodeToString(signature)
@@ -104,26 +101,11 @@ func (s *Signer) SignFile(filePath string) (string, error) {
 		return "", err
 	}
 
-	// 使用ECDSA进行签名
-	r, s_, err := ecdsa.Sign(rand.Reader, s.privateKey, hash.Sum(nil))
+	// 使用ECDSA进行签名，直接使用ASN.1格式
+	signature, err := ecdsa.SignASN1(rand.Reader, s.privateKey, hash.Sum(nil))
 	if err != nil {
 		return "", err
 	}
-
-	// r, s 补齐为32字节
-	rBytes := r.Bytes()
-	sBytes := s_.Bytes()
-	if len(rBytes) < 32 {
-		pad := make([]byte, 32-len(rBytes))
-		rBytes = append(pad, rBytes...)
-	}
-	if len(sBytes) < 32 {
-		pad := make([]byte, 32-len(sBytes))
-		sBytes = append(pad, sBytes...)
-	}
-
-	// 将r和s组合成签名
-	signature := append(rBytes, sBytes...)
 
 	// 使用URL安全的Base64编码
 	encoded := base64.URLEncoding.EncodeToString(signature)
